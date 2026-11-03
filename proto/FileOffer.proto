@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message FileOffer {
+    string name = 1;
+    uint64 size = 2;
+}
+
+message FileAnswer {
+    bool accepted = 1;
+}
