@@ -1,4 +1,4 @@
-#include "proto/FileOffer.pb.h"
+#include "FileOffer.pb.h"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>

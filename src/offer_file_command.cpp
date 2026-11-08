@@ -1,7 +1,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include "connection.h"
-#include "proto/FileOffer.pb.h"
+#include "FileOffer.pb.h"
 
 namespace fs = std::filesystem;
 

@@ -1,4 +1,4 @@
-#include "proto/Announce.pb.h"
+#include "Announce.pb.h"
 #include <boost/asio.hpp>
 #include <boost/asio/detail/chrono.hpp>
 #include <boost/asio/io_context.hpp>

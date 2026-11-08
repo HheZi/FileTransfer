@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <vector>
-#include "proto/Announce.pb.h"
+#include "Announce.pb.h"
 #include "encoder_decoder.h"
 
 namespace net = boost::asio;

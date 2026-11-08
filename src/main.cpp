@@ -1,5 +1,4 @@
 #include "connection.h"
-#include "proto/Announce.pb.h"
 #include "server.cpp"
 #include <boost/asio.hpp>
 #include <boost/asio/connect.hpp>
