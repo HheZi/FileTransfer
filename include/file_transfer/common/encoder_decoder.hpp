@@ -1,12 +1,11 @@
-#pragma once
+#ifndef COMMON_ENCODE_DECODER_HPP
+#define COMMON_ENCODE_DECODER_HPP
 
-#include <array>
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/impl/read.hpp>
 #include <boost/endian/conversion.hpp>
-#include <cstdint>
-#include <stdexcept>
+#include <boost/asio.hpp>
 #include <vector>
 
 namespace net = boost::asio;
@@ -14,8 +13,7 @@ using tcp = boost::asio::ip::tcp;
 
 class EncoderDecoder {
 public:
-  template <typename Msg>
-  static std::vector<char> encode(const Msg &msg) {
+  template <typename Msg> static std::vector<char> encode(const Msg &msg) {
     std::string data;
     if (!msg.SerializeToString(&data)) {
       throw std::runtime_error("Serialize fail");
@@ -31,8 +29,7 @@ public:
     return out;
   }
 
-  template <typename Msg>
-  static Msg decode(tcp::socket &socket) {
+  template <typename Msg> static Msg decode(tcp::socket &socket) {
     Msg msg;
     std::uint32_t len = 0;
 
@@ -49,10 +46,9 @@ public:
     return msg;
   }
 
-  template <typename Msg>
-  static Msg decode(const char* data) {
+  template <typename Msg> static Msg decode(const char *data) {
     Msg msg;
-    
+
     std::uint32_t len = 0;
     std::memcpy(&len, data, sizeof len);
     len = boost::endian::big_to_native(len);
@@ -66,3 +62,5 @@ public:
     return msg;
   }
 };
+
+#endif

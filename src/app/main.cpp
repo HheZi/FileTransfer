@@ -1,16 +1,16 @@
-#include "connection.h"
-#include "server.cpp"
+#include "file_transfer/client/connection.hpp"
+#include "file_transfer/server/server.hpp"
 #include <boost/asio.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
 #include <exception>
 #include <iostream>
+#include <filesystem>
 #include <string>
-#include "offer_file_command.cpp"
-#include "file_send_command.cpp"
-#include "discovery_handler.cpp"
-#include "connection.h"
-#include "id_generator.h"
+#include "file_transfer/client/offer_file_command.hpp"
+#include "file_transfer/client/file_send_command.hpp"
+#include "file_transfer/client/discovery_handler.hpp"
+#include "file_transfer/common/id_generator.hpp"
 
 void receiverMode(int argc, char *argv[]) {
   if (argc != 5) {

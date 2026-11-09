@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CLIENT_CONNECTION_HPP
+#define CLIENT_CONNECTION_HPP
 
 #include <boost/asio.hpp>
 #include <boost/asio/impl/write.hpp>
@@ -6,7 +7,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <cstddef>
 #include <iostream>
-#include "encoder_decoder.h"
+#include <string>
+#include "file_transfer/common/encoder_decoder.hpp"
 
 namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
@@ -19,21 +21,21 @@ public:
 
   void writeRawData(const char *data, const std::size_t size) {
     connectIfNotConnected();
-    
+
     net::write(socket_, net::buffer(data, size));
   }
 
   template <typename Msg> void write(const Msg &msg) {
     connectIfNotConnected();
-    
-    std::vector<char> buf = EncoderDecoder::encode(msg);
+
+    std::vector<char> buf = EncoderDecoder::encode<Msg>(msg);
 
     net::write(socket_, net::buffer(buf));
   }
 
   template <typename Msg> Msg read() {
     connectIfNotConnected();
-    
+
     return EncoderDecoder::decode<Msg>(socket_);
   }
 
@@ -43,20 +45,22 @@ private:
 
   std::string host_;
   std::string port_;
-  
+
   bool is_connected_;
 
   void connectIfNotConnected() {
-    if (is_connected_) return;
-    
-    tcp::resolver resolver (io_context_);
-    
+    if (is_connected_)
+      return;
+
+    tcp::resolver resolver(io_context_);
+
     std::cout << "Connecting to receiver...\n";
     net::connect(socket_, resolver.resolve(host_, port_));
 
     is_connected_ = true;
-    
+
     std::cout << "Connected to receiver\n";
   }
-  
 };
+
+#endif
