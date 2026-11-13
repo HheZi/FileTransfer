@@ -24,7 +24,10 @@ void Server::start() {
   io_context_.run();
 }
 
-void Server::stop() { io_context_.stop(); }
+void Server::stop() {
+  server_discovery_.stop();
+  io_context_.stop();
+}
 
 void Server::setDecider(ClientConnectionHandler::Decider decider) {
   decider_ = decider;

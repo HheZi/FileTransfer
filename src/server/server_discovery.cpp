@@ -28,11 +28,18 @@ void ServerDiscovery::start() {
   broadcast();
 }
 
+void ServerDiscovery::stop() {
+  timer_.cancel();
+
+  onStop();
+}
+
 void ServerDiscovery::broadcast() {
   Announce announce;
   announce.set_id(id_);
   announce.set_port(port_);
   announce.set_name(name_);
+  announce.set_isclosed(false);
 
   std::vector<char> buf = EncoderDecoder::encode(announce);
 
@@ -45,4 +52,16 @@ void ServerDiscovery::broadcast() {
     if (!ec)
       broadcast();
   });
+}
+
+void ServerDiscovery::onStop() {
+  Announce announce;
+  announce.set_id(id_);
+  announce.set_port(port_);
+  announce.set_name(name_);
+  announce.set_isclosed(true);
+
+  std::vector<char> buf = EncoderDecoder::encode(announce);
+
+  socket_.send_to(boost::asio::buffer(buf), endpoint_);
 }

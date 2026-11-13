@@ -20,6 +20,8 @@ public:
 
   void start();
 
+  void stop();
+
 private:
   boost::asio::steady_timer timer_;
 
@@ -31,6 +33,8 @@ private:
   udp::endpoint endpoint_;
 
   void broadcast();
+
+  void onStop();
 };
 
 #endif

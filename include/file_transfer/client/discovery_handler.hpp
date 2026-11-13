@@ -15,12 +15,13 @@ struct ClientDetails {
   std::string name;
   std::string host;
   std::uint32_t port;
+  bool is_closed;
 
   ClientDetails() = default;
   ClientDetails(const Announce &announce, const udp::endpoint &endpoint)
     : id(announce.id()), name(announce.name()),
       host(endpoint.address().to_string()),
-      port(announce.port()) {}
+      port(announce.port()), is_closed(announce.isclosed()) {}
 };
 
 class DiscoveryHandler {

@@ -30,30 +30,38 @@ public:
     auto *sizer = new wxBoxSizer(wxVERTICAL);
 
     wx_text_name = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-    wx_list_connetions = new wxListCtrl(panel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+    wx_list_connections = new wxListCtrl(panel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                             wxLC_REPORT | wxLC_SINGLE_SEL);
-    wx_list_connetions->AppendColumn("Id", wxLIST_FORMAT_LEFT, 250);    
-    wx_list_connetions->AppendColumn("Name", wxLIST_FORMAT_LEFT, 250);
-    wx_list_connetions->AppendColumn("IP", wxLIST_FORMAT_LEFT, 200);
+    wx_list_connections->AppendColumn("Id", wxLIST_FORMAT_LEFT, 250);
+    wx_list_connections->AppendColumn("Name", wxLIST_FORMAT_LEFT, 250);
+    wx_list_connections->AppendColumn("IP", wxLIST_FORMAT_LEFT, 200);
 
     sizer->Add(wx_text_name, 0, wxEXPAND | wxALL, 8);
-    sizer->Add(wx_list_connetions, 1, wxEXPAND | wxALL, 8);
+    sizer->Add(wx_list_connections, 1, wxEXPAND | wxALL, 8);
     panel->SetSizer(sizer);
 
-    // Events
-    wx_list_connetions->Bind(wxEVT_LIST_ITEM_ACTIVATED, [this](wxListEvent &e) {
-      sendFile(wx_list_connetions->GetItemText(e.m_itemIndex));
+    wx_list_connections->Bind(wxEVT_LIST_ITEM_ACTIVATED, [this](wxListEvent &e) {
+      sendFile(wx_list_connections->GetItemText(e.m_itemIndex));
     });
 
     auto observer = [this](const ClientDetails &details) {
       CallAfter([this, details]() {
-        long index = wx_list_connetions->FindItem(-1, details.id);
+        long index = wx_list_connections->FindItem(-1, details.id);
         if (index == wxNOT_FOUND) {
-          index = wx_list_connetions->InsertItem(0, details.id);
+	  if (details.is_closed)
+            return;
+
+          index = wx_list_connections->InsertItem(0, details.id);
         }
 
-        wx_list_connetions->SetItem(index, 1, details.name);
-        wx_list_connetions->SetItem(index, 2, details.host);
+        if (details.is_closed) {
+          wx_list_connections->DeleteItem(index);
+          client_details_holder_.erase(details.id);
+          return;
+        }
+
+        wx_list_connections->SetItem(index, 1, details.name);
+        wx_list_connections->SetItem(index, 2, details.host);
 
         client_details_holder_[details.id] = details;
       });
@@ -121,7 +129,7 @@ private:
   boost::asio::io_context io_context_;
   
   wxTextCtrl *wx_text_name {nullptr};
-  wxListCtrl *wx_list_connetions {nullptr};
+  wxListCtrl *wx_list_connections {nullptr};
   wxProgressDialog *wx_progress_dialog {nullptr};
 
   std::string server_id_;
