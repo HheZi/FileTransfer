@@ -5,6 +5,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <net/if.h>
 #include <stdexcept>
 #include <string>
 #include <filesystem>
@@ -17,8 +18,9 @@ namespace net = boost::asio;
 
 ClientConnectionHandler::connection_ptr
 ClientConnectionHandler::create(boost::asio::io_context &io_context,
-                                std::string &working_dir) {
-  return connection_ptr(new ClientConnectionHandler(io_context, working_dir));
+                                std::string &working_dir, Decider &decider,
+                                FileReceiveProgress &file_progress) {
+  return connection_ptr(new ClientConnectionHandler(io_context, working_dir, decider, file_progress));
 }
 
 tcp::socket &ClientConnectionHandler::socket() { return socket_; }
@@ -50,8 +52,10 @@ void ClientConnectionHandler::start() {
 }
 
 ClientConnectionHandler::ClientConnectionHandler(
-    boost::asio::io_context &io_context, std::string &working_dir)
-    : socket_(io_context), dir_(working_dir) {}
+    boost::asio::io_context &io_context, std::string &working_dir,
+    Decider &decider, FileReceiveProgress &file_progress)
+    : socket_(io_context), dir_(working_dir), decider_(decider),
+      file_progress_(file_progress) {}
 
 void ClientConnectionHandler::acceptFile(const std::string &fileName,
                                          const std::uint64_t size) {
@@ -67,6 +71,7 @@ void ClientConnectionHandler::acceptFile(const std::string &fileName,
 
     std::vector<char> buf(CHUNK_SIZE);
     std::uint64_t got = 0;
+    file_progress_(size, got);
     while (got < size) {
       std::size_t want =
           static_cast<std::size_t>(std::min(buf.size(), size - got));
@@ -74,6 +79,8 @@ void ClientConnectionHandler::acceptFile(const std::string &fileName,
 
       out.write(buf.data(), static_cast<std::streamsize>(n));
       got += n;
+
+      file_progress_(size, got);
     }
 
     out.close();
@@ -87,17 +94,10 @@ void ClientConnectionHandler::acceptFile(const std::string &fileName,
 }
 
 FileAnswer ClientConnectionHandler::decide(FileOffer &offer) {
-  std::cout << "Received file offer\n";
-  std::cout << "File Name: " << offer.name() << std::endl;
-  std::cout << "File size: " << offer.size() << std::endl << std::endl;
 
-  std::string str_answer;
-  std::cout << "Accept file(Y/N)?\n";
-  std::getline(std::cin, str_answer);
-
-  bool is_accepted = false;
-  if (str_answer == "Y")
-    is_accepted = true;
+  FileInfo info (offer);
+  
+  bool is_accepted = decider_(info);
 
   FileAnswer answer;
   answer.set_accepted(is_accepted);

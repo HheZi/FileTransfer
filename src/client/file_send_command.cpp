@@ -1,16 +1,21 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <stdexcept>
 #include <vector>
 #include "file_transfer/client/file_send_command.hpp"
 
+namespace fs = std::filesystem;
+
 FileSendCommand::FileSendCommand(Connection &connection)
     : connection_(connection) {}
 
-void FileSendCommand::sendFile(std::string &filePath, std::uint64_t size) {
+std::generator<std::uint64_t> FileSendCommand::sendFile(const std::string &filePath) {
+  std::uint64_t total_size = fs::file_size(filePath);
+
   std::ifstream in(filePath, std::ios::binary);
 
   if (!in)
@@ -19,13 +24,24 @@ void FileSendCommand::sendFile(std::string &filePath, std::uint64_t size) {
   std::vector<char> buf(CHUNK_SIZE);
 
   std::uint64_t sent = 0;
-  while (!in.eof() && sent < size) {
-    std::size_t want =
-        static_cast<std::size_t>(std::min(buf.size(), size - sent));
-    in.read(buf.data(), buf.size());
 
-    connection_.writeRawData(buf.data(), want);
+  co_yield sent;
+  
+  while (sent < total_size && in) {
+    std::streamsize want =
+        static_cast<std::streamsize>(std::min(buf.size(), total_size - sent));
+    
+    in.read(buf.data(), want);
 
-    sent += want;
+    std::streamsize bytesRead = in.gcount();
+
+    if (bytesRead == 0)
+      break;
+
+    connection_.writeRawData(buf.data(), static_cast<std::size_t>(bytesRead));
+
+    sent += bytesRead;
+
+    co_yield sent;
   }
 }

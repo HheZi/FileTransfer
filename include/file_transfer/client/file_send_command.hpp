@@ -3,13 +3,13 @@
 
 #include "connection.hpp"
 #include <cstddef>
-#include <cstdint>
+#include <generator>
 
 class FileSendCommand {
 public:
   FileSendCommand(Connection &connection);
 
-  void sendFile(std::string &filePath, std::uint64_t size);
+  std::generator<std::uint64_t> sendFile(const std::string &filePath);
 
 private:
   static constexpr std::size_t CHUNK_SIZE = 64 * 1024;

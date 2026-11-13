@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <boost/asio.hpp>
 #include "file_transfer/server/server.hpp"
+#include "file_transfer/server/client_connection_handler.hpp"
 
 Server::Server(std::uint32_t port, const std::string working_dir, std::string id,
                std::string name)
@@ -23,6 +24,17 @@ void Server::start() {
   io_context_.run();
 }
 
+void Server::stop() { io_context_.stop(); }
+
+void Server::setDecider(ClientConnectionHandler::Decider decider) {
+  decider_ = decider;
+}
+
+void Server::setFileProgress(
+    ClientConnectionHandler::FileReceiveProgress file_progress) {
+  file_progress_ = file_progress;
+}
+
 void Server::createWorkingDirectoryIfNotExists() {
   if (!std::filesystem::exists(working_dir_)) {
     std::filesystem::create_directories(working_dir_);
@@ -31,7 +43,8 @@ void Server::createWorkingDirectoryIfNotExists() {
 
 void Server::doAccept() {
   ClientConnectionHandler::connection_ptr conn =
-      ClientConnectionHandler::create(io_context_, working_dir_);
+      ClientConnectionHandler::create(io_context_, working_dir_, decider_,
+                                      file_progress_);
 
   acceptor_.async_accept(conn->socket(),
                          [this, conn](const boost::system::error_code &ec) {

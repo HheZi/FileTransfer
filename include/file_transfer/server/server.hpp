@@ -7,19 +7,28 @@
 #include "client_connection_handler.hpp"
 #include "server_discovery.hpp"
 
-class Server {
-public:
-  using tcp = boost::asio::ip::tcp;
+using tcp = boost::asio::ip::tcp;
 
-  explicit Server(std::uint32_t port, const std::string working_dir, std::string id,
+class Server {
+public:  
+  Server(std::uint32_t port, const std::string working_dir, std::string id,
                   std::string name);
 
   void start();
+
+  void stop();
+
+  void setDecider(ClientConnectionHandler::Decider decider);
+
+  void setFileProgress(ClientConnectionHandler::FileReceiveProgress file_progress);  
 
 private:
   boost::asio::io_context io_context_;
   tcp::acceptor acceptor_;
   std::string working_dir_;
+
+  ClientConnectionHandler::Decider decider_;
+  ClientConnectionHandler::FileReceiveProgress file_progress_;  
 
   ServerDiscovery server_discovery_;
 
