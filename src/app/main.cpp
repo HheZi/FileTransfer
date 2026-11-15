@@ -10,61 +10,68 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <wx/wx.h>
+#include <wx/button.h>
+#include <wx/event.h>
 #include <wx/gdicmn.h>
 #include <wx/generic/textdlgg.h>
+#include <wx/listbase.h>
 #include <wx/string.h>
 #include <wx/valtext.h>
 #include <wx/busyinfo.h>
-#include <wx/wx.h>
 #include <wx/progdlg.h>
 #include <wx/listctrl.h>
 
 class MainFrame : public wxFrame {
+  constexpr static int FRAME_WIDTH = 740, FRAME_HEIGH = 480;
+
 public:
-  MainFrame()
-      : io_context_(), server_id_(IdGenerator::generate()),
-        discovery_handler_(io_context_, server_id_),
+  MainFrame(wxString work_dir, wxString name)
+      : io_context_(), server_id_(IdGenerator::generate()), work_dir_(work_dir),
+        name_(name), discovery_handler_(io_context_, server_id_),
+        server_(std::make_unique<Server>(work_dir.ToStdString(), server_id_,
+                                         name.ToStdString())),
         wxFrame(nullptr, wxID_ANY, "File Transfer", wxDefaultPosition,
-                wxSize(740, 480)) {
+                wxSize(FRAME_WIDTH, FRAME_HEIGH)) {
     auto *panel = new wxPanel(this);
     auto *sizer = new wxBoxSizer(wxVERTICAL);
 
-    wx_text_name = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+    wx_text_name = new wxStaticText(panel, wxID_ANY, name_, wxDefaultPosition,
+                                    wxDefaultSize, wxTE_READONLY);
     wx_list_connections = new wxListCtrl(panel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                             wxLC_REPORT | wxLC_SINGLE_SEL);
     wx_list_connections->AppendColumn("Id", wxLIST_FORMAT_LEFT, 250);
     wx_list_connections->AppendColumn("Name", wxLIST_FORMAT_LEFT, 250);
     wx_list_connections->AppendColumn("IP", wxLIST_FORMAT_LEFT, 200);
 
+    wx_send_file_button = new wxButton(panel, wxID_ANY, "Send file");
+    wx_send_file_button->Enable(false);
+
     sizer->Add(wx_text_name, 0, wxEXPAND | wxALL, 8);
     sizer->Add(wx_list_connections, 1, wxEXPAND | wxALL, 8);
+    sizer->Add(wx_send_file_button, 0, wxALIGN_LEFT | wxALL, 8);
     panel->SetSizer(sizer);
 
-    wx_list_connections->Bind(wxEVT_LIST_ITEM_ACTIVATED, [this](wxListEvent &e) {
-      sendFile(wx_list_connections->GetItemText(e.m_itemIndex));
+    wx_list_connections->Bind(wxEVT_LIST_ITEM_SELECTED, [this](wxListEvent &e) {
+      wx_send_file_button->Enable(true);
+      selected_item_id = e.m_itemIndex;
+    });
+
+    wx_list_connections->Bind(wxEVT_LIST_ITEM_DESELECTED,
+                              [this](wxListEvent &e) {
+                                wx_send_file_button->Enable(false);
+                                selected_item_id = -1;
+                              });
+
+    wx_send_file_button->Bind(wxEVT_BUTTON, [this](wxCommandEvent &event) {
+      if (selected_item_id == -1)
+        return;
+
+      sendFile(wx_list_connections->GetItemText(selected_item_id));
     });
 
     auto observer = [this](const ClientDetails &details) {
-      CallAfter([this, details]() {
-        long index = wx_list_connections->FindItem(-1, details.id);
-        if (index == wxNOT_FOUND) {
-	  if (details.is_closed)
-            return;
-
-          index = wx_list_connections->InsertItem(0, details.id);
-        }
-
-        if (details.is_closed) {
-          wx_list_connections->DeleteItem(index);
-          client_details_holder_.erase(details.id);
-          return;
-        }
-
-        wx_list_connections->SetItem(index, 1, details.name);
-        wx_list_connections->SetItem(index, 2, details.host);
-
-        client_details_holder_[details.id] = details;
-      });
+      CallAfter([this, details]() { handleClientDiscovery(details); });
     };
 
     discovery_handler_.addObserver(observer);
@@ -75,7 +82,7 @@ public:
     if (server_) {
       server_->stop();
     }
-    
+
     if (m_server_thread.joinable()) {
       m_server_thread.join();
     }
@@ -86,9 +93,6 @@ public:
 
   void startServer() {
     m_server_thread = std::thread([this]() {
-      server_ = std::make_unique<Server>(8080, work_dir_.ToStdString(),
-                                         server_id_, name_.ToStdString());
-
       auto decider = [this](const FileInfo &info) {
 	return this->decideToGetAFile(info);
       };
@@ -101,10 +105,10 @@ public:
 
       server_->setDecider(decider);
       server_->setFileProgress(file_progress);
-      
+
       server_->start();
     });
-    
+
     m_discovery_handler_thread = std::thread([this]() {
       try {
         discovery_handler_.startReceive();
@@ -116,20 +120,14 @@ public:
     });
   }
 
-  void setName(wxString name) {
-    name_ = name;
-    wx_text_name->SetValue(name_);
-  }
-
-  void setWorkDir(std::string work_dir) {
-    work_dir_ = work_dir;
-  }
-
 private:
   boost::asio::io_context io_context_;
-  
-  wxTextCtrl *wx_text_name {nullptr};
-  wxListCtrl *wx_list_connections {nullptr};
+
+  long selected_item_id = -1;
+
+  wxStaticText *wx_text_name{nullptr};
+  wxListCtrl *wx_list_connections{nullptr};
+  wxButton *wx_send_file_button{nullptr};
   wxProgressDialog *wx_progress_dialog {nullptr};
 
   std::string server_id_;
@@ -138,8 +136,8 @@ private:
   std::unique_ptr<Server> server_;
 
   wxString name_;
-  wxString work_dir_;  
- 
+  wxString work_dir_;
+
   std::thread m_server_thread;
   std::thread m_discovery_handler_thread;
 
@@ -168,7 +166,7 @@ private:
         wxString::Format("Received %llu of %llu bytes (%d%%)",
                          static_cast<unsigned long long>(got),
                          static_cast<unsigned long long>(total), percent);
-    
+
     bool continue_transfer = true;
     wx_progress_dialog->Update(percent, msg, &continue_transfer);
 
@@ -246,6 +244,27 @@ private:
                                wxOK | wxICON_INFORMATION);
     msg_dialog.ShowModal();
   }
+
+  void handleClientDiscovery(const ClientDetails &details) {
+    long index = wx_list_connections->FindItem(-1, details.id);
+    if (index == wxNOT_FOUND) {
+      if (details.is_closed)
+        return;
+
+      index = wx_list_connections->InsertItem(0, details.id);
+    }
+
+    if (details.is_closed) {
+      wx_list_connections->DeleteItem(index);
+      client_details_holder_.erase(details.id);
+      return;
+    }
+
+    wx_list_connections->SetItem(index, 1, details.name);
+    wx_list_connections->SetItem(index, 2, details.host);
+
+    client_details_holder_[details.id] = details;
+  }
 };
 
 class MyApp : public wxApp {
@@ -268,9 +287,7 @@ public:
       return false;
     }
 
-    auto *f = new MainFrame();
-    f->setName(name);
-    f->setWorkDir(work_dir);
+    auto *f = new MainFrame(work_dir, name);
 
     try {
       f->startServer();

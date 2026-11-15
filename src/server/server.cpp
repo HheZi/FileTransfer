@@ -6,8 +6,8 @@
 #include "file_transfer/server/server.hpp"
 #include "file_transfer/server/client_connection_handler.hpp"
 
-Server::Server(std::uint32_t port, const std::string working_dir, std::string id,
-               std::string name)
+Server::Server(const std::string working_dir, std::string id,
+               std::string name, std::uint32_t port)
     : io_context_(), acceptor_(io_context_, tcp::endpoint(tcp::v4(), port)),
       working_dir_(working_dir),
       server_discovery_(io_context_, id, port, name) {

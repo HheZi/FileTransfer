@@ -10,9 +10,11 @@
 using tcp = boost::asio::ip::tcp;
 
 class Server {
-public:  
-  Server(std::uint32_t port, const std::string working_dir, std::string id,
-                  std::string name);
+  constexpr static std::uint32_t DEFAULT_PORT = 8080;
+
+public:
+  Server(const std::string working_dir, std::string id,
+	 std::string name, std::uint32_t port = DEFAULT_PORT);
 
   void start();
 
@@ -20,7 +22,7 @@ public:
 
   void setDecider(ClientConnectionHandler::Decider decider);
 
-  void setFileProgress(ClientConnectionHandler::FileReceiveProgress file_progress);  
+  void setFileProgress(ClientConnectionHandler::FileReceiveProgress file_progress);
 
 private:
   boost::asio::io_context io_context_;
@@ -28,7 +30,7 @@ private:
   std::string working_dir_;
 
   ClientConnectionHandler::Decider decider_;
-  ClientConnectionHandler::FileReceiveProgress file_progress_;  
+  ClientConnectionHandler::FileReceiveProgress file_progress_;
 
   ServerDiscovery server_discovery_;
 

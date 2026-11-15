@@ -10,21 +10,18 @@
 #include <cstdint>
 #include <string>
 
-namespace net = boost::asio;
-using udp = boost::asio::ip::udp;
-
 ServerDiscovery::ServerDiscovery(net::io_context &io_context, std::string id,
                                  std::uint32_t port, std::string name)
     : timer_(io_context, boost::asio::chrono::seconds(TIMER_EXPIRY_TIME)),
       id_(id), port_(port), name_(name), socket_(io_context),
-      endpoint_(boost::asio::ip::address_v4::broadcast(), BROADCAST_PORT) {};
-
-void ServerDiscovery::start() {
+      endpoint_(boost::asio::ip::address_v4::broadcast(), BROADCAST_PORT) {
   socket_.open(endpoint_.protocol());
   socket_.set_option(udp::socket::reuse_address(true));
   socket_.set_option(udp::socket::broadcast(true));
   socket_.bind(udp::endpoint(udp::v4(), BROADCAST_PORT));
+};
 
+void ServerDiscovery::start() {
   broadcast();
 }
 
