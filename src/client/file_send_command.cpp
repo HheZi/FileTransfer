@@ -10,7 +10,7 @@
 
 namespace fs = std::filesystem;
 
-FileSendCommand::FileSendCommand(Connection &connection)
+FileSendCommand::FileSendCommand(std::shared_ptr<Connection> connection)
     : connection_(connection) {}
 
 std::generator<std::uint64_t> FileSendCommand::sendFile(const std::string &filePath) {
@@ -26,11 +26,11 @@ std::generator<std::uint64_t> FileSendCommand::sendFile(const std::string &fileP
   std::uint64_t sent = 0;
 
   co_yield sent;
-  
+
   while (sent < total_size && in) {
     std::streamsize want =
         static_cast<std::streamsize>(std::min(buf.size(), total_size - sent));
-    
+
     in.read(buf.data(), want);
 
     std::streamsize bytesRead = in.gcount();
@@ -38,7 +38,7 @@ std::generator<std::uint64_t> FileSendCommand::sendFile(const std::string &fileP
     if (bytesRead == 0)
       break;
 
-    connection_.writeRawData(buf.data(), static_cast<std::size_t>(bytesRead));
+    connection_->writeRawData(buf.data(), static_cast<std::size_t>(bytesRead));
 
     sent += bytesRead;
 

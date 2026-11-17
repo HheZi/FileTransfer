@@ -128,7 +128,8 @@ private:
   wxStaticText *wx_text_name{nullptr};
   wxListCtrl *wx_list_connections{nullptr};
   wxButton *wx_send_file_button{nullptr};
-  wxProgressDialog *wx_progress_dialog {nullptr};
+  wxProgressDialog *wx_progress_dialog{nullptr};
+  std::unique_ptr<wxBusyInfo> wx_busy_info;
 
   std::string server_id_;
 
@@ -211,23 +212,28 @@ private:
 
     std::string path = dlg.GetPath().ToStdString();
 
-    Connection connection(details.host, std::to_string(details.port));
+    std::shared_ptr<Connection> connection = std::make_shared<Connection>(
+        io_context_, details.host, std::to_string(details.port));
     OfferFileCommand command(connection);
 
-    bool offerAccepted = false;
-    {
-      wxBusyInfo wait ("Waiting for response from receiver...");
+    wx_busy_info = std::make_unique<wxBusyInfo>("Waiting for response from receiver...");
 
-      wxYield();
+    auto handler = [this, path, connection](const OfferResult &result) {
+      CallAfter([this, path, result, connection]() {
+        handleFileOfferResult(path, result, connection);
+      });
+    };
 
-      offerAccepted = command.offerFile(path);
-    }
+    command.offerFile(path, handler);
+  }
 
-    if (!offerAccepted) {
-      wxMessageDialog msg_dialog(
-          this, "File was declined", "Warning",
-          wxOK |
-              wxICON_WARNING);
+  void handleFileOfferResult(const std::string path, const OfferResult &result,
+                             std::shared_ptr<Connection> connection) {
+    wx_busy_info.reset(nullptr);
+
+    if (!result.file_accepted) {
+      wxMessageDialog msg_dialog(this, "File was declined", "Warning",
+                                 wxOK | wxICON_WARNING);
       msg_dialog.ShowModal();
       return;
     }
@@ -237,6 +243,7 @@ private:
     const std::uint64_t total_size = std::filesystem::file_size(path);
 
     for (std::uint64_t bytes_sent : file_send_cmd.sendFile(path)) {
+      wxYield();
       handleFileProgress(total_size, bytes_sent);
     }
 

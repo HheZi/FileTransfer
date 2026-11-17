@@ -36,7 +36,7 @@ public:
 
 private:
   static constexpr std::uint32_t BROADCAST_PORT = 45454;
-  
+
   udp::socket socket_;
 
   std::string id_;
