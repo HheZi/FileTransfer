@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <exception>
 #include <fstream>
-#include <iostream>
 #include <net/if.h>
 #include <stdexcept>
 #include <string>
@@ -27,7 +26,6 @@ tcp::socket &ClientConnectionHandler::socket() { return socket_; }
 
 void ClientConnectionHandler::start() {
   try {
-    std::cout << "Start accepting connection\n";
 
     FileOffer offer = EncoderDecoder::decode<FileOffer>(socket_);
 
@@ -38,7 +36,6 @@ void ClientConnectionHandler::start() {
     boost::asio::write(socket_, boost::asio::buffer(buf));
 
     if (!answer.accepted()) {
-      std::cout << "Close the connection\n";
       socket_.close();
       return;
     }
@@ -62,8 +59,6 @@ void ClientConnectionHandler::acceptFile(const std::string &fileName,
   std::filesystem::path file = dir_ / fileName;
 
   try {
-    std::cout << "Start accepting file\n";
-
     std::ofstream out(file, std::ios::binary | std::ios::trunc);
 
     if (!out)
@@ -85,7 +80,6 @@ void ClientConnectionHandler::acceptFile(const std::string &fileName,
 
     out.close();
 
-    std::cout << "File received\n";
   } catch (...) {
     std::error_code ec;
     std::filesystem::remove(file, ec);
@@ -96,7 +90,7 @@ void ClientConnectionHandler::acceptFile(const std::string &fileName,
 FileAnswer ClientConnectionHandler::decide(FileOffer &offer) {
 
   FileInfo info (offer);
-  
+
   bool is_accepted = decider_(info);
 
   FileAnswer answer;

@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <iostream>
 #include <string>
 #include <filesystem>
 #include <boost/asio.hpp>
@@ -16,7 +15,6 @@ Server::Server(const std::string working_dir, std::string id,
 }
 
 void Server::start() {
-  std::cout << "Server has started" << std::endl;
 
   server_discovery_.start();
   doAccept();
@@ -57,11 +55,8 @@ void Server::doAccept() {
 
 void Server::handleAccept(ClientConnectionHandler::connection_ptr conn,
                           const boost::system::error_code &error) {
-  if (!error) {
+  if (!error)
     conn->start();
-  } else {
-    std::cerr << error.message() << std::endl;
-  }
 
   doAccept();
 }

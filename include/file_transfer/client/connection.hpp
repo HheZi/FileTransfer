@@ -8,7 +8,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <cstddef>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <string>
 #include "file_transfer/common/encoder_decoder.hpp"
@@ -75,12 +74,9 @@ private:
 
     tcp::resolver resolver(io_context_);
 
-    std::cout << "Connecting to receiver...\n";
     net::connect(socket_, resolver.resolve(host_, port_));
 
     is_connected_ = true;
-
-    std::cout << "Connected to receiver\n";
   }
 
   template <typename Msg, typename Res> void handleAsyncRead(const AsyncReader<Res> async_reader) {
