@@ -21,7 +21,7 @@ void OfferFileCommand::offerFile(
 
   FileOffer fileOffer;
 
-  fileOffer.set_name(path.filename());
+  fileOffer.set_name(path.filename().string());
   fileOffer.set_size(fs::file_size(path));
 
   connection_->write(fileOffer);
