@@ -1,0 +1,108 @@
+name: Build and publish release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            runner: ubuntu-24.04
+          - platform: windows
+            runner: windows-2022
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            ninja-build \
+            cmake \
+            libboost-all-dev \
+            libprotobuf-dev \
+            protobuf-compiler \
+            libwxgtk3.2-dev
+
+      - name: Set up MSYS2
+        if: matrix.platform == 'windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-boost
+            mingw-w64-x86_64-protobuf
+            mingw-w64-x86_64-wxwidgets3.2-msw
+
+      - name: Build Linux application
+        if: matrix.platform == 'linux'
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+          mkdir -p dist
+          cp build/src/app/app dist/FileTransfer-linux
+          cat > dist/run-linux.sh <<'EOF'
+          #!/usr/bin/env sh
+          set -eu
+          SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+          exec "$SCRIPT_DIR/FileTransfer-linux" "$@"
+          EOF
+          chmod +x dist/run-linux.sh
+
+      - name: Build Windows application
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+          mkdir -p dist
+          cp build/src/app/app.exe dist/FileTransfer.exe
+
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Create release and attach builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/* \
+            --generate-notes \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY"
