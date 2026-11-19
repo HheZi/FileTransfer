@@ -30,31 +30,33 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential \
-            ninja-build \
-            cmake \
+            build-essential ninja-build \
             libboost-all-dev \
-            libprotobuf-dev \
-            protobuf-compiler \
+            libprotobuf-dev protobuf-compiler \
             libwxgtk3.2-dev
+
+      - name: Set up CMake
+        if: matrix.platform == 'linux'
+        uses: lukka/get-cmake@v4.2.1
 
       - name: Set up MSYS2
         if: matrix.platform == 'windows'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: true
           install: >-
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-boost
-            mingw-w64-x86_64-protobuf
-            mingw-w64-x86_64-wxwidgets3.2-msw
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-boost
+            mingw-w64-ucrt-x86_64-protobuf
+            mingw-w64-ucrt-x86_64-wxwidgets
 
       - name: Build Linux application
         if: matrix.platform == 'linux'
         run: |
+          cmake --version
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel
           mkdir -p dist
@@ -71,6 +73,7 @@ jobs:
         if: matrix.platform == 'windows'
         shell: msys2 {0}
         run: |
+          cmake --version
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel
           mkdir -p dist
