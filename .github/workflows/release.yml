@@ -10,23 +10,14 @@ permissions:
 
 jobs:
   build:
-    name: Build (${{ matrix.platform }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux
-            runner: ubuntu-24.04
-          - platform: windows
-            runner: windows-2022
+    name: Build (Linux)
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out source
         uses: actions/checkout@v4
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -40,54 +31,31 @@ jobs:
             libwxgtk3.2-dev
 
       - name: Set up CMake
-        if: matrix.platform == 'linux'
         uses: lukka/get-cmake@v4.2.1
 
-      - name: Set up MSYS2
-        if: matrix.platform == 'windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-gcc
-            mingw-w64-ucrt-x86_64-boost
-            mingw-w64-ucrt-x86_64-protobuf
-            mingw-w64-ucrt-x86_64-wxwidgets3.2-msw
-
       - name: Build Linux application
-        if: matrix.platform == 'linux'
         run: |
           gcc-14 --version
           cmake --version
           CC=gcc-14 CXX=g++-14 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel
+
           mkdir -p dist
           cp build/src/app/app dist/FileTransfer-linux
+
           cat > dist/run-linux.sh <<'EOF'
           #!/usr/bin/env sh
           set -eu
           SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
           exec "$SCRIPT_DIR/FileTransfer-linux" "$@"
           EOF
+
           chmod +x dist/run-linux.sh
 
-      - name: Build Windows application
-        if: matrix.platform == 'windows'
-        shell: msys2 {0}
-        run: |
-          cmake --version
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel
-          mkdir -p dist
-          cp build/src/app/app.exe dist/FileTransfer.exe
-
-      - name: Upload build outputs
+      - name: Upload Linux build outputs
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.platform }}
+          name: release-linux
           path: dist/*
           if-no-files-found: error
 
@@ -97,14 +65,13 @@ jobs:
     needs: build
 
     steps:
-      - name: Download build outputs
+      - name: Download Linux build outputs
         uses: actions/download-artifact@v4
         with:
+          name: release-linux
           path: dist
-          pattern: release-*
-          merge-multiple: true
 
-      - name: Create release and attach builds
+      - name: Create release and attach Linux builds
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
