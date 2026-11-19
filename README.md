@@ -67,13 +67,13 @@ The exact executable path may vary depending on your platform and CMake generato
 
 ## Firewall Configuration
 
-FileTransfer uses local-network discovery and a TCP server. A firewall may block discovery broadcasts or reject incoming connections, causing peers not to appear or file transfers to fail.
+FileTransfer uses UDP local-network discovery and a TCP server. A firewall may block discovery broadcasts or reject incoming connections, causing peers not to appear or file transfers to fail.
 
 If this occurs:
 
 - Allow the application through the firewall on your private or local network.
 - Allow inbound TCP traffic on port `8080`, or on the custom port used by the server.
-- Confirm that discovery traffic is permitted on your network.
+- Allow inbound UDP traffic on port `45454` for discovering other client on the LAN, or on the custom port used by the server.
 - Ensure that Windows, router, VPN, and third-party security software rules are not blocking the application.
 - Verify that both devices are on the same LAN and network segment.
 
@@ -89,7 +89,3 @@ The application defines two Protocol Buffer message types:
 ## Contributing
 
 Contributions are welcome. Fork the repository, create a focused feature branch, and submit a pull request with a clear description of the change.
-
-## License
-
-No license has been specified for this repository. All rights remain with the repository owner unless a license is explicitly added.
