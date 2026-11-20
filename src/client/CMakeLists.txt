@@ -7,6 +7,8 @@ add_library(client
   ${PROJECT_SOURCE_DIR}/include/file_transfer/client/discovery_handler.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/client/file_send_command.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/client/offer_file_command.hpp
+  ${PROJECT_SOURCE_DIR}/include/file_transfer/client/offer_result.hpp
+  ${PROJECT_SOURCE_DIR}/include/file_transfer/client/client_details.hpp
 )
 
 target_include_directories(client
@@ -17,5 +19,5 @@ target_include_directories(client
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(client PRIVATE common)
-target_link_libraries(client PRIVATE proto)
+target_link_libraries(client PUBLIC common)
+target_link_libraries(client PUBLIC proto)

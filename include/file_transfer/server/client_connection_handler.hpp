@@ -1,7 +1,7 @@
 #ifndef SERVER_CLIENT_CONNECTION_HANDLER_HPP
 #define SERVER_CLIENT_CONNECTION_HANDLER_HPP
 
-#include "FileOffer.pb.h"
+#include "file_transfer/server/file_info.hpp"
 #include <cstdint>
 #include <string>
 #include <filesystem>
@@ -10,17 +10,6 @@
 
 using tcp = boost::asio::ip::tcp;
 namespace fs = std::filesystem;
-
-struct FileInfo {
-  std::string name;
-  std::uint64_t size;
-
-  FileInfo() = default;
-  FileInfo(FileOffer &offer) {
-    name = offer.name();
-    size = offer.size();
-  }
-};
 
 class ClientConnectionHandler
     : public std::enable_shared_from_this<ClientConnectionHandler> {
@@ -46,7 +35,7 @@ private:
   tcp::socket socket_;
   fs::path dir_;
   Decider &decider_;
-  FileReceiveProgress& file_progress_;  
+  FileReceiveProgress& file_progress_;
 
   void acceptFile(const std::string &fileName, const std::uint64_t size);
 

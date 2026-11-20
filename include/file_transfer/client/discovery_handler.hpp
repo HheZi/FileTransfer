@@ -5,24 +5,10 @@
 #include <cstdint>
 #include <functional>
 #include <vector>
-#include "Announce.pb.h"
+#include "file_transfer/client/client_details.hpp"
 
 namespace net = boost::asio;
 using udp = boost::asio::ip::udp;
-
-struct ClientDetails {
-  std::string id;
-  std::string name;
-  std::string host;
-  std::uint32_t port;
-  bool is_closed;
-
-  ClientDetails() = default;
-  ClientDetails(const Announce &announce, const udp::endpoint &endpoint)
-    : id(announce.id()), name(announce.name()),
-      host(endpoint.address().to_string()),
-      port(announce.port()), is_closed(announce.isclosed()) {}
-};
 
 class DiscoveryHandler {
 public:

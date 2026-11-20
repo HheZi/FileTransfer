@@ -19,7 +19,6 @@ target_include_directories(ui
 target_link_libraries(ui
   PUBLIC
     wxWidgets::wxWidgets
-  PRIVATE
     proto
     common
     client

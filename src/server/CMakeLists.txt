@@ -6,6 +6,7 @@ add_library(server
   ${PROJECT_SOURCE_DIR}/include/file_transfer/server/server.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/server/server_discovery.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/server/client_connection_handler.hpp
+  ${PROJECT_SOURCE_DIR}/include/file_transfer/server/file_info.hpp
 )
 
 target_include_directories(server
@@ -16,6 +17,6 @@ target_include_directories(server
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(server PRIVATE common)
-target_link_libraries(server PRIVATE proto)
+target_link_libraries(server PUBLIC common)
+target_link_libraries(server PUBLIC proto)
 
