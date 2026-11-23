@@ -1,6 +1,6 @@
 # FileTransfer
 
-A cross-platform LAN file-sharing application written in C++23. FileTransfer provides a wxWidgets desktop interface, automatic peer discovery, and direct file offers and transfers over the local network.
+A LAN file-sharing application written in C++23. FileTransfer provides a wxWidgets desktop interface, automatic peer discovery, and direct file offers and transfers over the local network.
 
 ## Features
 
@@ -24,7 +24,7 @@ A cross-platform LAN file-sharing application written in C++23. FileTransfer pro
 ```text
 include/file_transfer/  Public C++ headers
   client/               Discovery and file-send interfaces
-  common/               Encoding and ID helpers
+  common/               Encoding, Constants and ID helpers
   server/               Server and connection handling
   ui/                   wxWidgets application and main window
 proto/                  Protocol Buffer message definitions
@@ -85,7 +85,3 @@ The application defines two Protocol Buffer message types:
 
 - `Announce`: advertises a server ID, display name, port, and open/closed status.
 - `FileOffer` / `FileAnswer`: describes an offered file and carries the receiver's accept/reject response.
-
-## Contributing
-
-Contributions are welcome. Fork the repository, create a focused feature branch, and submit a pull request with a clear description of the change.
