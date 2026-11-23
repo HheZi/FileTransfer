@@ -4,17 +4,16 @@
 #include <cstdint>
 #include <string>
 #include <boost/asio.hpp>
+#include "file_transfer/common/constants.hpp"
 #include "client_connection_handler.hpp"
 #include "server_discovery.hpp"
 
 using tcp = boost::asio::ip::tcp;
 
 class Server {
-  constexpr static std::uint32_t DEFAULT_PORT = 8080;
-
 public:
   Server(const std::string working_dir, std::string id,
-	 std::string name, std::uint32_t port = DEFAULT_PORT);
+	 std::string name, std::uint32_t port = DEFAULT_SERVER_PORT);
 
   void start();
 

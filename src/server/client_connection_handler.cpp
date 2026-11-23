@@ -9,6 +9,7 @@
 #include <string>
 #include <filesystem>
 #include <boost/asio.hpp>
+#include "file_transfer/common/constants.hpp"
 #include <system_error>
 #include "file_transfer/common/encoder_decoder.hpp"
 #include "file_transfer/server/client_connection_handler.hpp"

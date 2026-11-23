@@ -1,6 +1,7 @@
 #include "file_transfer/server/server_discovery.hpp"
 #include "Announce.pb.h"
 #include "file_transfer/common/encoder_decoder.hpp"
+#include "file_transfer/common/constants.hpp"
 #include <boost/asio.hpp>
 #include <boost/asio/detail/chrono.hpp>
 #include <boost/asio/io_context.hpp>
@@ -14,11 +15,11 @@ ServerDiscovery::ServerDiscovery(net::io_context &io_context, std::string id,
                                  std::uint32_t port, std::string name)
     : timer_(io_context, boost::asio::chrono::seconds(TIMER_EXPIRY_TIME)),
       id_(id), port_(port), name_(name), socket_(io_context),
-      endpoint_(boost::asio::ip::address_v4::broadcast(), BROADCAST_PORT) {
+      endpoint_(boost::asio::ip::address_v4::broadcast(), DEFAULT_BROADCAST_PORT) {
   socket_.open(endpoint_.protocol());
   socket_.set_option(udp::socket::reuse_address(true));
   socket_.set_option(udp::socket::broadcast(true));
-  socket_.bind(udp::endpoint(udp::v4(), BROADCAST_PORT));
+  socket_.bind(udp::endpoint(udp::v4(), DEFAULT_BROADCAST_PORT));
 };
 
 void ServerDiscovery::start() {

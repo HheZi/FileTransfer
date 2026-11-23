@@ -2,7 +2,6 @@
 #define CLIENT_DISCOVERY_HANDLER_HPP
 
 #include <boost/asio.hpp>
-#include <cstdint>
 #include <functional>
 #include <vector>
 #include "file_transfer/client/client_details.hpp"
@@ -21,8 +20,6 @@ public:
   void addObserver(Observer observer);
 
 private:
-  static constexpr std::uint32_t BROADCAST_PORT = 45454;
-
   udp::socket socket_;
 
   std::string id_;

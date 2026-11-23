@@ -12,9 +12,6 @@ using udp = boost::asio::ip::udp;
 
 class ServerDiscovery {
 public:
-  static constexpr std::uint32_t BROADCAST_PORT = 45454;
-  static constexpr std::uint32_t TIMER_EXPIRY_TIME = 5;
-
   ServerDiscovery(net::io_context &io_context, std::string id,
                   std::uint32_t port, std::string name);
 
@@ -23,6 +20,8 @@ public:
   void stop();
 
 private:
+  static constexpr std::uint8_t TIMER_EXPIRY_TIME = 5;
+
   boost::asio::steady_timer timer_;
 
   std::string id_;

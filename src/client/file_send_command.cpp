@@ -6,6 +6,7 @@
 #include <ios>
 #include <stdexcept>
 #include <vector>
+#include "file_transfer/common/constants.hpp"
 #include "file_transfer/client/file_send_command.hpp"
 
 namespace fs = std::filesystem;

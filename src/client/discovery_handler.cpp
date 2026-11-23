@@ -1,13 +1,14 @@
 #include <boost/system/detail/error_code.hpp>
 #include "file_transfer/common/encoder_decoder.hpp"
 #include "file_transfer/client/discovery_handler.hpp"
+#include "file_transfer/common/constants.hpp"
 
 namespace net = boost::asio;
 using udp = boost::asio::ip::udp;
 
 DiscoveryHandler::DiscoveryHandler(net::io_context &io, std::string id)
     : socket_(io), id_(id) {
-  udp::endpoint ep(udp::v4(), BROADCAST_PORT);
+  udp::endpoint ep(udp::v4(), DEFAULT_BROADCAST_PORT);
   socket_.open(ep.protocol());
   socket_.set_option(net::socket_base::reuse_address(true));
   socket_.set_option(net::socket_base::broadcast(true));

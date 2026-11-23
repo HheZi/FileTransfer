@@ -10,10 +10,7 @@ struct FileInfo {
   std::uint64_t size;
 
   FileInfo() = default;
-  FileInfo(FileOffer &offer) {
-    name = offer.name();
-    size = offer.size();
-  }
+  FileInfo(FileOffer &offer) : name(offer.name()), size(offer.size()) {}
 };
 
 #endif

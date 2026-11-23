@@ -27,8 +27,6 @@ public:
   void start();
 
 private:
-  static constexpr std::size_t CHUNK_SIZE = 64 * 1024;
-
   ClientConnectionHandler(boost::asio::io_context &io_context,
                           std::string &working_dir, Decider &decider,
                           FileReceiveProgress& file_progress);
