@@ -5,6 +5,6 @@
 
 constexpr std::uint16_t DEFAULT_SERVER_PORT = 8080;
 constexpr std::uint16_t DEFAULT_BROADCAST_PORT = 45454;
-constexpr std::size_t CHUNK_SIZE = 64 * 1024;
+constexpr std::size_t CHUNK_SIZE = 1024 * 1024;
 
 #endif
