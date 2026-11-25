@@ -69,6 +69,8 @@ private:
   void handleClientDiscovery(const ClientDetails &details);
 
   void handleFileReceive(std::shared_ptr<FileReceiver> receiver);
+
+  void handleConnectionError();
 };
 
 #endif

@@ -19,7 +19,7 @@ public:
   std::string file_name;
   std::uint64_t file_size;
 
-  std::generator<std::uint64_t> receivePartOfFile();
+  std::generator<std::uint64_t> receiveFile();
 
   void stop();
 

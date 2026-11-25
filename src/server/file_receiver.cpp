@@ -1,4 +1,6 @@
 #include "file_transfer/server/file_receiver.hpp"
+#include <boost/system/detail/error_code.hpp>
+#include <boost/system/system_error.hpp>
 #include <fstream>
 #include <generator>
 #include <memory>
@@ -28,7 +30,7 @@ FileReceiver::~FileReceiver() {
     out_->close();
 }
 
-std::generator<std::uint64_t> FileReceiver::receivePartOfFile() {
+std::generator<std::uint64_t> FileReceiver::receiveFile() {
   fs::path file = dir_ / file_name;
 
   try {
@@ -70,7 +72,7 @@ void FileReceiver::stop() {
 void FileReceiver::closeConnection() {
   if (socket_.is_open()) {
     socket_.shutdown(tcp::socket::shutdown_both);
-    socket_.cancel();
+    socket_.close();
   }
   is_stoped_ = true;
 }

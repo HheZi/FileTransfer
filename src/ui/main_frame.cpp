@@ -197,19 +197,20 @@ void MainFrame::handleFileOfferResult(const std::string path, const OfferResult 
     return;
   }
 
-  FileSendCommand file_send_cmd(connection);
+  FileSendCommand file_send_cmd(connection, path);
 
   const std::uint64_t total_size = std::filesystem::file_size(path);
 
   try {
-    for (std::uint64_t bytes_sent : file_send_cmd.sendFile(path)) {
-      handleFileProgress(total_size, bytes_sent);
+    for (std::uint64_t bytes_sent : file_send_cmd.sendFile()) {
+      if (handleFileProgress(total_size, bytes_sent)) {
+	file_send_cmd.cancel();
+	return;
+      }
       wxYield();
     }
   } catch (boost::system::system_error &e) {
-    wxMessageDialog msg_dialog(this, "The connection has been closed", "Info",
-                               wxOK | wxICON_INFORMATION);
-    msg_dialog.ShowModal();
+    handleConnectionError();
     return;
   }
 
@@ -243,7 +244,7 @@ void MainFrame::handleFileReceive(std::shared_ptr<FileReceiver> receiver) {
   const std::uint64_t total_size = receiver->file_size;
 
   try {
-    for (std::uint64_t bytes_sent : receiver->receivePartOfFile()) {
+    for (std::uint64_t bytes_sent : receiver->receiveFile()) {
       if (handleFileProgress(total_size, bytes_sent)) {
         receiver->stop();
         return;
@@ -251,13 +252,22 @@ void MainFrame::handleFileReceive(std::shared_ptr<FileReceiver> receiver) {
       wxYield();
     }
   } catch (boost::system::system_error &e) {
-    wxMessageDialog msg_dialog(this, "The connection has been closed", "Info",
-                               wxOK | wxICON_INFORMATION);
-    msg_dialog.ShowModal();
+    handleConnectionError();
     return;
   }
 
   wxMessageDialog msg_dialog(this, "File was successfully received", "Info",
 			     wxOK | wxICON_INFORMATION);
+  msg_dialog.ShowModal();
+}
+
+void MainFrame::handleConnectionError() {
+  if (wx_progress_dialog) {
+    wx_progress_dialog->Destroy();
+    wx_progress_dialog = nullptr;
+  }
+
+  wxMessageDialog msg_dialog(this, "The connection has been closed", "Info",
+                             wxOK | wxICON_INFORMATION);
   msg_dialog.ShowModal();
 }

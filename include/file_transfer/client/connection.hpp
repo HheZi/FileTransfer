@@ -58,6 +58,13 @@ public:
         });
   }
 
+  void close() {
+    if (socket_.is_open()) {
+      socket_.shutdown(tcp::socket::shutdown_both);
+      socket_.close();
+    }
+  }
+
 private:
   net::io_context& io_context_;
   tcp::socket socket_;
