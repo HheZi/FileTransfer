@@ -2,7 +2,7 @@
 #define SERVER_CLIENT_CONNECTION_HANDLER_HPP
 
 #include "file_transfer/server/file_info.hpp"
-#include <cstdint>
+#include "file_transfer/server/file_receiver.hpp"
 #include <string>
 #include <filesystem>
 #include <memory>
@@ -16,11 +16,11 @@ class ClientConnectionHandler
 public:
   using connection_ptr = std::shared_ptr<ClientConnectionHandler>;
   using Decider = std::function<bool(const FileInfo &)>;
-  using FileReceiveProgress = std::function<void(const std::uint64_t total, const std::uint64_t got)>;
+  using FileReceiverHandler = std::function<void(std::shared_ptr<FileReceiver>)>;
 
   static connection_ptr create(boost::asio::io_context &io_context,
-                               std::string &working_dir, Decider &decider,
-                               FileReceiveProgress& file_progress);
+                               std::string &working_dir, Decider& decider,
+                               FileReceiverHandler& file_progress);
 
   tcp::socket &socket();
 
@@ -29,13 +29,11 @@ public:
 private:
   ClientConnectionHandler(boost::asio::io_context &io_context,
                           std::string &working_dir, Decider &decider,
-                          FileReceiveProgress& file_progress);
+                          FileReceiverHandler &file_receiver_handler);
   tcp::socket socket_;
   fs::path dir_;
   Decider &decider_;
-  FileReceiveProgress& file_progress_;
-
-  void acceptFile(const std::string &fileName, const std::uint64_t size);
+  FileReceiverHandler &file_receiver_hanlder_;
 
   FileAnswer decide(FileOffer &offer);
 };

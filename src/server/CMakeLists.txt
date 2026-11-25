@@ -1,4 +1,5 @@
 add_library(server
+  file_receiver.cpp
   client_connection_handler.cpp
   server_discovery.cpp
   server.cpp
@@ -7,6 +8,7 @@ add_library(server
   ${PROJECT_SOURCE_DIR}/include/file_transfer/server/server_discovery.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/server/client_connection_handler.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/server/file_info.hpp
+  ${PROJECT_SOURCE_DIR}/include/file_transfer/server/file_receiver.hpp
 )
 
 target_include_directories(server

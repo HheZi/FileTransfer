@@ -21,7 +21,7 @@ public:
 
   void setDecider(ClientConnectionHandler::Decider decider);
 
-  void setFileProgress(ClientConnectionHandler::FileReceiveProgress file_progress);
+  void setFileReceiverHandler(ClientConnectionHandler::FileReceiverHandler file_receiver_handler);
 
 private:
   boost::asio::io_context io_context_;
@@ -29,7 +29,7 @@ private:
   std::string working_dir_;
 
   ClientConnectionHandler::Decider decider_;
-  ClientConnectionHandler::FileReceiveProgress file_progress_;
+  ClientConnectionHandler::FileReceiverHandler file_receiver_handler_;
 
   ServerDiscovery server_discovery_;
 

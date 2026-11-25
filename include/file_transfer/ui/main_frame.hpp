@@ -3,6 +3,7 @@
 
 #include "file_transfer/client/discovery_handler.hpp"
 #include "file_transfer/server/client_connection_handler.hpp"
+#include "file_transfer/server/file_receiver.hpp"
 #include "file_transfer/server/server.hpp"
 #include "file_transfer/client/offer_file_command.hpp"
 #include <boost/asio/io_context.hpp>
@@ -58,7 +59,7 @@ private:
 
   void sendFile(const wxString client_id);
 
-  void handleFileProgress(const std::uint64_t total, const std::uint64_t got);
+  bool handleFileProgress(const std::uint64_t total, const std::uint64_t got);
 
   bool decideToGetAFile(const FileInfo &info);
 
@@ -66,6 +67,8 @@ private:
                              std::shared_ptr<Connection> connection);
 
   void handleClientDiscovery(const ClientDetails &details);
+
+  void handleFileReceive(std::shared_ptr<FileReceiver> receiver);
 };
 
 #endif

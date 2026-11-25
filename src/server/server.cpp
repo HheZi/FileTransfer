@@ -5,8 +5,8 @@
 #include "file_transfer/server/server.hpp"
 #include "file_transfer/server/client_connection_handler.hpp"
 
-Server::Server(const std::string working_dir, std::string id,
-               std::string name, std::uint32_t port)
+Server::Server(const std::string working_dir, std::string id, std::string name,
+               std::uint32_t port)
     : io_context_(), acceptor_(io_context_, tcp::endpoint(tcp::v4(), port)),
       working_dir_(working_dir),
       server_discovery_(io_context_, id, port, name) {
@@ -31,9 +31,9 @@ void Server::setDecider(ClientConnectionHandler::Decider decider) {
   decider_ = decider;
 }
 
-void Server::setFileProgress(
-    ClientConnectionHandler::FileReceiveProgress file_progress) {
-  file_progress_ = file_progress;
+void Server::setFileReceiverHandler(
+    ClientConnectionHandler::FileReceiverHandler file_receiver_handler) {
+  file_receiver_handler_ = file_receiver_handler;
 }
 
 void Server::createWorkingDirectoryIfNotExists() {
@@ -45,7 +45,7 @@ void Server::createWorkingDirectoryIfNotExists() {
 void Server::doAccept() {
   ClientConnectionHandler::connection_ptr conn =
       ClientConnectionHandler::create(io_context_, working_dir_, decider_,
-                                      file_progress_);
+                                      file_receiver_handler_);
 
   acceptor_.async_accept(conn->socket(),
                          [this, conn](const boost::system::error_code &ec) {

@@ -1,6 +1,9 @@
 #include "file_transfer/ui/main_frame.hpp"
 #include "file_transfer/client/file_send_command.hpp"
 #include "file_transfer/common/id_generator.hpp"
+#include "file_transfer/server/file_receiver.hpp"
+#include <boost/system/system_error.hpp>
+#include <memory>
 #include <wx/event.h>
 #include <wx/wx.h>
 
@@ -69,14 +72,13 @@ void MainFrame::startServer() {
       return this->decideToGetAFile(info);
     };
 
-    auto file_progress = [this](const std::uint64_t total,
-				const std::uint64_t got) {
+    auto file_receiver_handler = [this](std::shared_ptr<FileReceiver> receiver) {
       CallAfter(
-		[this, total, got]() { this->handleFileProgress(total, got); });
+		[this, receiver]() { this->handleFileReceive(receiver); });
     };
 
     server_->setDecider(decider);
-    server_->setFileProgress(file_progress);
+    server_->setFileReceiverHandler(file_receiver_handler);
 
     server_->start();
   });
@@ -97,20 +99,20 @@ void MainFrame::startServer() {
   });
 }
 
-void MainFrame::handleFileProgress(const std::uint64_t total, const std::uint64_t got) {
+bool MainFrame::handleFileProgress(const std::uint64_t total, const std::uint64_t got) {
   if (total == 0 || got >= total) {
     if (wx_progress_dialog) {
       wx_progress_dialog->Destroy();
       wx_progress_dialog = nullptr;
     }
-    return;
+    return false;
   }
 
   if (!wx_progress_dialog) {
-    wx_progress_dialog = new wxProgressDialog(
-					      "File Transfer", "Receiving file...", 100, this,
-					      wxPD_APP_MODAL | wxPD_AUTO_HIDE | wxPD_CAN_ABORT | wxPD_ELAPSED_TIME |
-					      wxPD_REMAINING_TIME);
+    wx_progress_dialog =
+        new wxProgressDialog("File Transfer", "Receiving file...", 100, this,
+                             wxPD_APP_MODAL | wxPD_AUTO_HIDE | wxPD_CAN_ABORT |
+                                 wxPD_ELAPSED_TIME | wxPD_REMAINING_TIME);
   }
 
   int percent = static_cast<int>((static_cast<double>(got) / total) * 100.0);
@@ -122,12 +124,16 @@ void MainFrame::handleFileProgress(const std::uint64_t total, const std::uint64_
 		     static_cast<unsigned long long>(total), percent);
 
   bool continue_transfer = true;
-  wx_progress_dialog->Update(percent, msg, &continue_transfer);
+  bool is_canceled = wx_progress_dialog->Update(percent, msg, &continue_transfer);
 
-  if (!continue_transfer) {
+  if (!is_canceled || !continue_transfer) {
     wx_progress_dialog->Destroy();
     wx_progress_dialog = nullptr;
+
+    return true;
   }
+
+  return false;
 }
 
 bool MainFrame::decideToGetAFile(const FileInfo &info) {
@@ -135,7 +141,7 @@ bool MainFrame::decideToGetAFile(const FileInfo &info) {
   std::future<bool> future = promise->get_future();
 
   const std::string message =
-    "Name: " + info.name + " Size: " + std::to_string(info.size);
+    "Name: " + info.name + "\nSize: " + std::to_string(info.size);
 
   CallAfter([this, message, promise]() {
     wxMessageDialog dlg(this, message, "File offer received",
@@ -166,7 +172,7 @@ void MainFrame::sendFile(const wxString client_id) {
   std::string path = dlg.GetPath().ToStdString();
 
   std::shared_ptr<Connection> connection = std::make_shared<Connection>(
-									io_context_, details.host, std::to_string(details.port));
+      io_context_, details.host, std::to_string(details.port));
   OfferFileCommand command(connection);
 
   wx_busy_info = std::make_unique<wxBusyInfo>("Waiting for response from receiver...");
@@ -195,9 +201,16 @@ void MainFrame::handleFileOfferResult(const std::string path, const OfferResult 
 
   const std::uint64_t total_size = std::filesystem::file_size(path);
 
-  for (std::uint64_t bytes_sent : file_send_cmd.sendFile(path)) {
-    wxYield();
-    handleFileProgress(total_size, bytes_sent);
+  try {
+    for (std::uint64_t bytes_sent : file_send_cmd.sendFile(path)) {
+      handleFileProgress(total_size, bytes_sent);
+      wxYield();
+    }
+  } catch (boost::system::system_error &e) {
+    wxMessageDialog msg_dialog(this, "The connection has been closed", "Info",
+                               wxOK | wxICON_INFORMATION);
+    msg_dialog.ShowModal();
+    return;
   }
 
   wxMessageDialog msg_dialog(this, "File was sent successfully", "Info",
@@ -224,4 +237,27 @@ void MainFrame::handleClientDiscovery(const ClientDetails &details) {
   wx_list_connections->SetItem(index, 2, details.host);
 
   client_details_holder_[details.id] = details;
+}
+
+void MainFrame::handleFileReceive(std::shared_ptr<FileReceiver> receiver) {
+  const std::uint64_t total_size = receiver->file_size;
+
+  try {
+    for (std::uint64_t bytes_sent : receiver->receivePartOfFile()) {
+      if (handleFileProgress(total_size, bytes_sent)) {
+        receiver->stop();
+        return;
+      }
+      wxYield();
+    }
+  } catch (boost::system::system_error &e) {
+    wxMessageDialog msg_dialog(this, "The connection has been closed", "Info",
+                               wxOK | wxICON_INFORMATION);
+    msg_dialog.ShowModal();
+    return;
+  }
+
+  wxMessageDialog msg_dialog(this, "File was successfully received", "Info",
+			     wxOK | wxICON_INFORMATION);
+  msg_dialog.ShowModal();
 }
