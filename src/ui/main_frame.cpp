@@ -1,6 +1,7 @@
 #include "file_transfer/ui/main_frame.hpp"
 #include "file_transfer/client/file_send_command.hpp"
 #include "file_transfer/common/id_generator.hpp"
+#include "file_transfer/common/file_size_converter.hpp"
 #include "file_transfer/server/file_receiver.hpp"
 #include <boost/system/system_error.hpp>
 #include <memory>
@@ -118,10 +119,9 @@ bool MainFrame::handleFileProgress(const std::uint64_t total, const std::uint64_
   int percent = static_cast<int>((static_cast<double>(got) / total) * 100.0);
   percent = std::clamp(percent, 0, 100);
 
-  wxString msg =
-    wxString::Format("Received %llu of %llu bytes (%d%%)",
-		     static_cast<unsigned long long>(got),
-		     static_cast<unsigned long long>(total), percent);
+  wxString msg = wxString::Format(
+      "Received %s of %s bytes (%d%%)", FileSizeConvert::toHumanReadable(got),
+      FileSizeConvert::toHumanReadable(total), percent);
 
   bool continue_transfer = true;
   bool is_canceled = wx_progress_dialog->Update(percent, msg, &continue_transfer);
@@ -141,7 +141,8 @@ bool MainFrame::decideToGetAFile(const FileInfo &info) {
   std::future<bool> future = promise->get_future();
 
   const std::string message =
-    "Name: " + info.name + "\nSize: " + std::to_string(info.size);
+      "Name: " + info.name +
+      "\nSize: " + FileSizeConvert::toHumanReadable(info.size);
 
   CallAfter([this, message, promise]() {
     wxMessageDialog dlg(this, message, "File offer received",

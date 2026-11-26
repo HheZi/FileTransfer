@@ -4,6 +4,7 @@ add_library(common
   ${PROJECT_SOURCE_DIR}/include/file_transfer/common/encoder_decoder.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/common/id_generator.hpp
   ${PROJECT_SOURCE_DIR}/include/file_transfer/common/constants.hpp
+  ${PROJECT_SOURCE_DIR}/include/file_transfer/common/file_size_converter.hpp
 )
 
 target_include_directories(common
